@@ -1,0 +1,35 @@
+Sub Main 'Sub ExportToSTL(oDoc As Inventor.Document)
+	Dim oApp As Inventor.Application = ThisApplication
+	Dim oDoc As Document = oApp.ActiveDocument
+	Dim oSTL As TranslatorAddIn
+	For Each oAppAddin As ApplicationAddIn In oApp.ApplicationAddIns
+		If oAppAddin.DisplayName = "Translator: STL Export" Then
+			oSTL = oAppAddin
+		End If
+	Next
+
+	'The following lines create the needed input variables
+	Dim oTO As TransientObjects = oApp.TransientObjects
+	Dim oContext As TranslationContext = oTO.CreateTranslationContext
+	oContext.Type = IOMechanismEnum.kFileBrowseIOMechanism
+	Dim oOptions As NameValueMap = oTO.CreateNameValueMap
+	Dim oDataMedium As DataMedium = oTO.CreateDataMedium
+
+	'set these options the way you want them here
+	oOptions.Value("ExportUnits") = 0 '(I assume 0 is 'Source Units' in the dialog / INCH = 2 / FOOT = 3 / CENTIMETER = 4 / MILLIMETER = 5 / METER = 6 / MICRON = 7)
+	oOptions.Value("Resolution") = 3 '(HIGH = 0 / MEDIUM = 1 / LOW = 2 / CUSTOM = 3 / BREP = 4)
+	oOptions.Value("SurfaceDeviation") = 5 '(Range 0 to 100, the value has precision of 0.0001. None-zero value is used if Resolution is CUSTOM (3), otherwise value is ignored.)
+	oOptions.Value("NormalDeviation") = 2 '(Range 0 to 41. Non-zero value is used if Resolution is CUSTOM (3), otherwise value is ignored. Any input value out of this range will be changed to 14 by force.)
+	oOptions.Value("MaxEdgeLength") = 100 '(Range 0 to 100. Non-zero value is used if Resolution is CUSTOM (3), otherwise value is ignored.)
+	oOptions.Value("AspectRatio") = 21.5 '(Range 0 to 21.5. Non-zero value is used if Resolution is CUSTOM (3), otherwise value is ignored.)
+	oOptions.Value("ExportFileStructure") = 0 '(ONE FILE = 0 / ONE FILE PER PART INSTANCE = 1)
+
+	'set output file's path and file name here
+	'the way it is set-up right now, it will save to the same location,
+	'and same file name as original document, 'but with the .obj file extension
+	oDataMedium.FileName = System.IO.Path.ChangeExtension(oDoc.FullFileName, ("_" & iProperties.Value(oDoc,"Project", "Revision Number") & ".stl"))
+
+	If oSTL.HasSaveCopyAsOptions(oDoc, oContext, oOptions) Then
+		oSTL.SaveCopyAs(oDoc, oContext, oOptions, oDataMedium)
+	End If
+End Sub
